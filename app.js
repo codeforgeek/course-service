@@ -41,6 +41,7 @@ nconf
 // disable some headers
 app.disable('etag');
 app.disable('x-powered-by');
+app.use(require('./routes/verify'));
 app.use('/api', require('./routes'));
 
 //override console log with winston
@@ -63,7 +64,7 @@ app.use((err, req, res, next) => {
 console.log(`${chalk.green('✓')} Starting the program...`);
 app.listen(process.argv[2] || nconf.get('port'), () => {
     console.log(
-        `${chalk.green('✓')} Rocket is running at http://localhost:${nconf.get(
+        `${chalk.green('✓')} App is running at http://localhost:${nconf.get(
             'port'
         )}`
     );
