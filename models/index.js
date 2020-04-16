@@ -76,7 +76,7 @@ function createCourse(courseData, callback) {
         "slug": courseData.slug,
         "featuredImage": courseData.featuredImage,
         "price": courseData.price,
-        "author": 1,
+        "author": parseInt(nconf.get('authorId')),
         "date": new Date(),
         "overview": courseData.overview,
         "url": nconf.get('url') + courseData.slug,
@@ -98,7 +98,7 @@ function updateCourse(courseData, callback) {
         "slug": courseData.slug,
         "featuredImage": courseData.featuredImage,
         "price": courseData.price,
-        "author": 1,
+        "author": parseInt(nconf.get('authorId')),
         "date": new Date(),
         "overview": courseData.overview,
         "url": nconf.get('url') + courseData.slug,
@@ -110,6 +110,18 @@ function updateCourse(courseData, callback) {
             return callback(true, 'error updating courses.');
         }
         callback(false, {error: false, message: "Successfully updated the course", data: []});
+    });
+}
+
+function publishCourse(publishData, callback) {
+    let payload = {
+        isPublished: publishData.publish
+    };
+    dbo.collection('courses').updateOne({id: parseInt(publishData.id)}, {$set: payload}, (err, results) => {
+        if(err) {
+            return callback(true, 'error updating courses.');
+        }
+        callback(false, {error: false, message: "Successfully published the course", data: []});
     });
 }
 
@@ -189,4 +201,5 @@ module.exports = {
     updateLesson: updateLesson,
     deleteLesson: deleteLesson,
     getSpecifcLesson: getSpecifcLesson,
+    publishCourse: publishCourse,
 };

@@ -34,6 +34,17 @@ router.post('/photo', (req,res) => {
     });
 });
 
+
+router.post('/publish', (req,res) => {
+    let data = req.body;
+    models.publishCourse(data,(err, results) => {
+        if(err) {
+            return res.json({"error": true, "message": "Error publishing course."});
+        }
+        res.json({"error": false, data: results});
+    });
+});
+
 router.get('/courses', (req,res) => {
     models.getAllCourses(
         (err, results) => {
