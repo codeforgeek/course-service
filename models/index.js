@@ -226,11 +226,7 @@ function deleteLesson(lessonData, callback) {
 function clearCache() {
     redis.flushdb((err, succeeded) => {
         console.log(`${chalk.red('✓')} Redis Cache Cleared.`);
-        console.log(succeeded);
     });
-    // redis.flushall('ASYNC', () => {
-    //     console.log(`${chalk.red('✓')} Redis Cache Cleared.`);
-    // });
 }
 
 module.exports = {

@@ -42,7 +42,7 @@ nconf
 app.disable('etag');
 app.disable('x-powered-by');
 app.use(require('./routes/verify'));
-app.use('/api', require('./routes'));
+app.use('/', require('./routes'));
 
 //override console log with winston
 console.log = (...args) => {
