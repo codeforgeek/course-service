@@ -1,6 +1,8 @@
 const mongo = require('mongodb');
 const nconf = require('nconf');
 const chalk = require('chalk');
+const redisClient = require('redis').createClient;
+const redis = redisClient(6379, 'localhost');
 
 // connect to MongoDB
 var dbo = null;
@@ -14,6 +16,11 @@ mongo.connect(nconf.get('mongodbURL'), {
     }
     dbo = db.db('codeforgeek');
     console.log(`${chalk.green('✓')} Connected to ${chalk.green('MongoDB')} database`);
+});
+
+// check Redis connection
+redis.on("connect", () => {
+    console.log(`${chalk.green('✓')} Connected to ${chalk.green('Redis')} database`);
 });
 
 /**
@@ -30,6 +37,25 @@ function getAllCourses(callback) {
             }
             let response = {
                 courses: results,
+            };
+            callback(false, response);
+        });
+    }
+    catch(e) {
+        callback(true, 'Error occurred getting courses');
+    }
+}
+
+function getSpecificCourse(query, callback) {
+    try {
+        dbo.collection('courses').find({id: parseInt(query.id)}).sort({
+            date: -1
+        }).toArray((err, results) => {
+            if (err) {
+                return callback(true, 'error retrieving course.');
+            }
+            let response = {
+                course: results.length > 0 ? results[0] : [],
             };
             callback(false, response);
         });
@@ -57,7 +83,7 @@ function getAllLessons(query, callback) {
 function getSpecifcLesson(query, callback) {
     dbo.collection('lessons').find({
         courseId: query.courseId,
-        lessonId: query.lessonId
+        id: query.lessonId
     }).toArray((err, lessonData) => {
         if (err) {
             return callback(true, 'error retrieving lesson.');
@@ -87,6 +113,7 @@ function createCourse(courseData, callback) {
         if(err) {
             return callback(true, 'error creating courses.');
         }
+        clearCache();
         callback(false, {error: false, message: "Successfully created the course", data: results.ops[0]});
     });
 }
@@ -109,6 +136,7 @@ function updateCourse(courseData, callback) {
         if(err) {
             return callback(true, 'error updating courses.');
         }
+        clearCache();
         callback(false, {error: false, message: "Successfully updated the course", data: []});
     });
 }
@@ -121,6 +149,7 @@ function publishCourse(publishData, callback) {
         if(err) {
             return callback(true, 'error updating courses.');
         }
+        clearCache();
         callback(false, {error: false, message: "Successfully published the course", data: []});
     });
 }
@@ -130,12 +159,13 @@ function deleteCourse(courseData, callback) {
         if(err) {
             return callback(true, 'error deleting course.');
         }
-        dbo.collection('lessons').deleteOne({courseId: parseInt(courseData.id)}, (err, results) => {
+        dbo.collection('lessons').deleteMany({courseId: parseInt(courseData.id)}, (err, results) => {
             if(err) {
                 return callback(true, 'error deleting lessons.');
             }
+            clearCache();
+            callback(false, {error: false, message: "Successfully deleted the course", data: []});
         });
-        callback(false, {error: false, message: "Successfully deleted the course", data: []});
     });
 }
 
@@ -156,6 +186,7 @@ function createLesson(lessonData, callback) {
         if(err) {
             return callback(true, 'error creating courses.');
         }
+        clearCache();
         callback(false, {error: false, message: "Successfully created the lesson.", data: results.ops[0]});
     });
 }
@@ -177,18 +208,29 @@ function updateLesson(lessonData, callback) {
         if(err) {
             return callback(true, 'error updating lessons.');
         }
-        console.log(results);
+        clearCache();
         callback(false, {error: false, message: "Successfully updated the lessons.", data: []});
     });
 }
 
 function deleteLesson(lessonData, callback) {
-    dbo.collection('lessons').remove({id: parseInt(lessonData.id), courseId: parseInt(lessonData.courseId)}, (err, results) => {
+    dbo.collection('lessons').deleteOne({id: parseInt(lessonData.id), courseId: parseInt(lessonData.courseId)}, (err, results) => {
         if(err) {
             return callback(true, 'error deleting lessons.');
         }
+        clearCache();
         callback(false, {error: false, message: "Successfully deleted the lessons.", data: []});
     });
+}
+
+function clearCache() {
+    redis.flushdb((err, succeeded) => {
+        console.log(`${chalk.red('✓')} Redis Cache Cleared.`);
+        console.log(succeeded);
+    });
+    // redis.flushall('ASYNC', () => {
+    //     console.log(`${chalk.red('✓')} Redis Cache Cleared.`);
+    // });
 }
 
 module.exports = {
@@ -202,4 +244,5 @@ module.exports = {
     deleteLesson: deleteLesson,
     getSpecifcLesson: getSpecifcLesson,
     publishCourse: publishCourse,
+    getSpecificCourse: getSpecificCourse,
 };

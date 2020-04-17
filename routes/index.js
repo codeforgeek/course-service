@@ -56,6 +56,20 @@ router.get('/courses', (req,res) => {
     );
 });
 
+router.get('/courses/:courseId', (req,res) => {
+    models.getSpecificCourse(
+        {
+            id:req.params.courseId
+        },
+        (err, results) => {
+            if (err) {
+                return res.json({"error": true, "message": "Error uploading file."});
+            }
+            res.json({"error": false, data: results});
+        }
+    );
+});
+
 router.post('/courses',(req,res) => {
     let data = req.body;
     models.createCourse(data,(err, results) => {
@@ -66,8 +80,9 @@ router.post('/courses',(req,res) => {
     });
 });
 
-router.put('/courses',(req,res) => {
+router.put('/courses/:courseId',(req,res) => {
     let data = req.body;
+    data.id = req.params.courseId;
     models.updateCourse(data,(err, results) => {
         if (err) {
             return res.json({"error": true, "message": "Error updating course."});
@@ -76,8 +91,9 @@ router.put('/courses',(req,res) => {
     });
 });
 
-router.delete('/courses',(req,res) => {
+router.delete('/courses/:courseId',(req,res) => {
     let data = req.body;
+    data.id = req.params.courseId;
     models.deleteCourse(data,(err, results) => {
         if (err) {
             return res.json({"error": true, "message": "Error deleting course."});
@@ -129,8 +145,9 @@ router.post('/courses/:courseId/lessons', (req,res) => {
 });
 
 
-router.put('/courses/:courseId/lessons', (req,res) => {
+router.put('/courses/:courseId/lessons/:lessonId', (req,res) => {
     let data = req.body;
+    data.id=req.params.lessonId;
     data.courseId = req.params.courseId;
     models.updateLesson(data,
         (err, results) => {
@@ -142,8 +159,9 @@ router.put('/courses/:courseId/lessons', (req,res) => {
     );
 });
 
-router.delete('/courses/:courseId/lessons', (req,res) => {
+router.delete('/courses/:courseId/lessons/:lessonId', (req,res) => {
     let data = req.body;
+    data.id = req.params.lessonId;
     data.courseId = req.params.courseId;
     models.deleteLesson(data,
         (err, results) => {
