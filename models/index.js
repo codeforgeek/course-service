@@ -233,6 +233,7 @@ function createLesson(lessonData, callback) {
       excerpt: lessonData.excerpt,
       content: lessonData.content,
       courseId: lessonData.courseId,
+      sectionId: lessonData.sectionId || null,
       lessonOrder: lessonData.lessonOrder,
       url: nconf.get("url") + lessonData.slug,
       isPublished: false,
@@ -261,6 +262,7 @@ function updateLesson(lessonData, callback) {
     excerpt: lessonData.excerpt,
     content: lessonData.content,
     courseId: lessonData.courseId,
+    sectionId: lessonData.sectionId || null,
     lessonOrder: lessonData.lessonOrder,
     url: nconf.get("url") + "/lessons/#/" + lessonData.slug,
     isPublished: lessonData.isPublished,
@@ -345,6 +347,96 @@ function checkIfLessonExists(slug, callback) {
   }
 }
 
+function getAllSections(query, callback) {
+  let courseId = query.courseId;
+  dbo
+    .collection("lessons_sections")
+    .find({
+      courseId: courseId,
+    })
+    .toArray((err, lessonData) => {
+      if (err) {
+        return callback(true, "error retrieving sections.");
+      }
+      if (lessonData.length === 0) {
+        return callback(false, []);
+      }
+      callback(false, lessonData);
+    });
+}
+
+function createSection(sectionData, callback) {
+  let payload = {
+    id: uuid(),
+    name: sectionData.name,
+    courseId: sectionData.courseId,
+  };
+
+  dbo.collection("lessons_sections").insertOne(payload, (err, results) => {
+    if (err) {
+      return callback(true, "error creating section.");
+    }
+    callback(false, {
+      error: false,
+      message: "Successfully created the section.",
+      data: results.ops[0],
+    });
+  });
+}
+
+function updateSection(sectionData, callback) {
+  let payload = {
+    name: sectionData.name,
+  };
+
+  dbo
+    .collection("lessons_sections")
+    .updateOne(
+      { id: sectionData.id, courseId: sectionData.courseId },
+      { $set: payload },
+      (err, results) => {
+        if (err) {
+          return callback(true, "error updating section.");
+        }
+        callback(false, {
+          error: false,
+          message: "Successfully updated the section.",
+          data: [],
+        });
+      }
+    );
+}
+
+function deleteSection(sectionData, callback) {
+  dbo
+    .collection("lessons_sections")
+    .deleteOne(
+      { id: sectionData.id, courseId: sectionData.courseId },
+      (err, results) => {
+        if (err) {
+          return callback(true, "error deleting section.");
+        }
+        // update the lessons with sectionId null
+        dbo
+          .collection("lessons")
+          .updateMany(
+            { sectionId: sectionData.id },
+            { $set: { sectionId: null } },
+            (err, results) => {
+              if (err) {
+                return callback(true, "error deleting section.");
+              }
+              callback(false, {
+                error: false,
+                message: "Successfully deleted the section.",
+                data: [],
+              });
+            }
+          );
+      }
+    );
+}
+
 function clearCache() {
   redis.flushdb((err, succeeded) => {
     console.log(`${chalk.red("✓")} Redis Cache Cleared.`);
@@ -363,4 +455,8 @@ module.exports = {
   getSpecifcLesson: getSpecifcLesson,
   publishCourse: publishCourse,
   getSpecificCourse: getSpecificCourse,
+  createSection: createSection,
+  updateSection: updateSection,
+  getAllSections: getAllSections,
+  deleteSection: deleteSection,
 };

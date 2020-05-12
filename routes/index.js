@@ -123,6 +123,55 @@ router.get("/courses/:courseId/lessons", (req, res) => {
   );
 });
 
+router.get("/courses/:courseId/sections", (req, res) => {
+  models.getAllSections(
+    {
+      courseId: req.params.courseId,
+    },
+    (err, results) => {
+      if (err) {
+        return res.json({ error: true, message: "Error getting course." });
+      }
+      res.json({ error: false, data: results });
+    }
+  );
+});
+
+router.post("/courses/:courseId/sections", (req, res) => {
+  let data = req.body;
+  data.courseId = req.params.courseId;
+  models.createSection(data, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error getting section." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
+router.put("/courses/:courseId/sections/:sectionId", (req, res) => {
+  let data = req.body;
+  data.courseId = req.params.courseId;
+  data.id = req.params.sectionId;
+  models.updateSection(data, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error getting section." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
+router.delete("/courses/:courseId/sections/:sectionId", (req, res) => {
+  let data = {};
+  data.courseId = req.params.courseId;
+  data.id = req.params.sectionId;
+  models.deleteSection(data, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error getting section." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
 router.get("/courses/:courseId/lessons/:lessonId", (req, res) => {
   let data = {
     courseId: req.params.courseId,
