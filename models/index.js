@@ -1,6 +1,7 @@
 const mongo = require("mongodb");
 const nconf = require("nconf");
 const chalk = require("chalk");
+const { uuid } = require("uuidv4");
 const redisClient = require("redis").createClient;
 const redis = redisClient(6379, "localhost");
 
@@ -61,7 +62,7 @@ function getSpecificCourse(query, callback) {
   try {
     dbo
       .collection("courses")
-      .find({ id: parseInt(query.id) })
+      .find({ id: query.id })
       .sort({
         date: -1,
       })
@@ -80,7 +81,7 @@ function getSpecificCourse(query, callback) {
 }
 
 function getAllLessons(query, callback) {
-  let courseId = parseInt(query.courseId);
+  let courseId = query.courseId;
   dbo
     .collection("lessons")
     .find({
@@ -117,35 +118,43 @@ function getSpecifcLesson(query, callback) {
 }
 
 function createCourse(courseData, callback) {
-  let payload = {
-    id: Math.floor(Math.random() * 100000000000 + 2),
-    name: courseData.name,
-    slug: courseData.slug,
-    featuredImage: courseData.featuredImage,
-    price: courseData.price,
-    author: parseInt(nconf.get("authorId")),
-    date: new Date(),
-    overview: courseData.overview,
-    url: nconf.get("url") + courseData.slug,
-    isPublished: false,
-  };
-
-  dbo.collection("courses").insertOne(payload, (err, results) => {
+  checkIfCourseExists(courseData.slug, (err) => {
     if (err) {
-      return callback(true, "error creating courses.");
+      return callback(true, "course already exists with this slug");
     }
-    clearCache();
-    callback(false, {
-      error: false,
-      message: "Successfully created the course",
-      data: results.ops[0],
+    // create course now
+    let payload = {
+      id: uuid(),
+      name: courseData.name,
+      slug: courseData.slug,
+      featuredImage: courseData.featuredImage,
+      price: courseData.price || 0,
+      author: parseInt(nconf.get("authorId")),
+      level: courseData.level || "beginner",
+      type: courseData.type || "Rich Text",
+      overview: courseData.overview,
+      url: nconf.get("url") + courseData.slug,
+      isPublished: false,
+      date: new Date(),
+    };
+
+    dbo.collection("courses").insertOne(payload, (err, results) => {
+      if (err) {
+        return callback(true, "error creating courses.");
+      }
+      clearCache();
+      callback(false, {
+        error: false,
+        message: "Successfully created the course",
+        data: results.ops[0],
+      });
     });
   });
 }
 
 function updateCourse(courseData, callback) {
   let payload = {
-    id: parseInt(courseData.id),
+    id: courseData.id,
     name: courseData.name,
     slug: courseData.slug,
     featuredImage: courseData.featuredImage,
@@ -159,21 +168,17 @@ function updateCourse(courseData, callback) {
 
   dbo
     .collection("courses")
-    .updateOne(
-      { id: parseInt(courseData.id) },
-      { $set: payload },
-      (err, results) => {
-        if (err) {
-          return callback(true, "error updating courses.");
-        }
-        clearCache();
-        callback(false, {
-          error: false,
-          message: "Successfully updated the course",
-          data: [],
-        });
+    .updateOne({ id: courseData.id }, { $set: payload }, (err, results) => {
+      if (err) {
+        return callback(true, "error updating courses.");
       }
-    );
+      clearCache();
+      callback(false, {
+        error: false,
+        message: "Successfully updated the course",
+        data: [],
+      });
+    });
 }
 
 function publishCourse(publishData, callback) {
@@ -182,89 +187,90 @@ function publishCourse(publishData, callback) {
   };
   dbo
     .collection("courses")
-    .updateOne(
-      { id: parseInt(publishData.id) },
-      { $set: payload },
-      (err, results) => {
+    .updateOne({ id: publishData.id }, { $set: payload }, (err, results) => {
+      if (err) {
+        return callback(true, "error updating courses.");
+      }
+      clearCache();
+      callback(false, {
+        error: false,
+        message: "Successfully published the course",
+        data: [],
+      });
+    });
+}
+
+function deleteCourse(courseData, callback) {
+  dbo.collection("courses").deleteOne({ id: courseData.id }, (err, results) => {
+    if (err) {
+      return callback(true, "error deleting course.");
+    }
+    dbo
+      .collection("lessons")
+      .deleteMany({ courseId: courseData.id }, (err, results) => {
         if (err) {
-          return callback(true, "error updating courses.");
+          return callback(true, "error deleting lessons.");
         }
         clearCache();
         callback(false, {
           error: false,
-          message: "Successfully published the course",
+          message: "Successfully deleted the course",
           data: [],
         });
-      }
-    );
-}
-
-function deleteCourse(courseData, callback) {
-  dbo
-    .collection("courses")
-    .deleteOne({ id: parseInt(courseData.id) }, (err, results) => {
-      if (err) {
-        return callback(true, "error deleting course.");
-      }
-      dbo
-        .collection("lessons")
-        .deleteMany({ courseId: parseInt(courseData.id) }, (err, results) => {
-          if (err) {
-            return callback(true, "error deleting lessons.");
-          }
-          clearCache();
-          callback(false, {
-            error: false,
-            message: "Successfully deleted the course",
-            data: [],
-          });
-        });
-    });
+      });
+  });
 }
 
 function createLesson(lessonData, callback) {
-  let payload = {
-    id: Math.floor(Math.random() * 100000000000 + 2),
-    title: lessonData.title,
-    slug: lessonData.slug,
-    excerpt: lessonData.excerpt,
-    content: lessonData.content,
-    courseId: parseInt(lessonData.courseId),
-    lessonOrder: lessonData.lessonOrder,
-    url: nconf.get("url") + lessonData.slug,
-    isPublished: false,
-  };
-
-  dbo.collection("lessons").insertOne(payload, (err, results) => {
+  checkIfLessonExists(lessonData.slug, (err) => {
     if (err) {
-      return callback(true, "error creating courses.");
+      return callback(true, "Lesson already exists with this slug.");
     }
-    clearCache();
-    callback(false, {
-      error: false,
-      message: "Successfully created the lesson.",
-      data: results.ops[0],
+    let payload = {
+      id: uuid(),
+      title: lessonData.title,
+      slug: lessonData.slug,
+      excerpt: lessonData.excerpt,
+      content: lessonData.content,
+      courseId: lessonData.courseId,
+      lessonOrder: lessonData.lessonOrder,
+      url: nconf.get("url") + lessonData.slug,
+      isPublished: false,
+      isPreviewEnabled: lessonData.isPreviewEnabled || false,
+    };
+
+    dbo.collection("lessons").insertOne(payload, (err, results) => {
+      if (err) {
+        return callback(true, "error creating lessons.");
+      }
+      clearCache();
+      callback(false, {
+        error: false,
+        message: "Successfully created the lesson.",
+        data: results.ops[0],
+      });
     });
   });
 }
 
 function updateLesson(lessonData, callback) {
   let payload = {
-    id: parseInt(lessonData.id),
+    id: lessonData.id,
     title: lessonData.title,
     slug: lessonData.slug,
     excerpt: lessonData.excerpt,
     content: lessonData.content,
-    courseId: parseInt(lessonData.courseId),
+    courseId: lessonData.courseId,
     lessonOrder: lessonData.lessonOrder,
     url: nconf.get("url") + "/lessons/#/" + lessonData.slug,
     isPublished: lessonData.isPublished,
+    isPreviewEnabled: lessonData.isPreviewEnabled || false,
   };
 
   dbo
     .collection("lessons")
     .updateOne(
-      { id: parseInt(lessonData.id), courseId: parseInt(lessonData.courseId) },
+      { id: lessonData.id, courseId: lessonData.courseId },
       { $set: payload },
       (err, results) => {
         if (err) {
@@ -284,7 +290,7 @@ function deleteLesson(lessonData, callback) {
   dbo
     .collection("lessons")
     .deleteOne(
-      { id: parseInt(lessonData.id), courseId: parseInt(lessonData.courseId) },
+      { id: lessonData.id, courseId: lessonData.courseId },
       (err, results) => {
         if (err) {
           return callback(true, "error deleting lessons.");
@@ -297,6 +303,46 @@ function deleteLesson(lessonData, callback) {
         });
       }
     );
+}
+
+function checkIfCourseExists(slug, callback) {
+  try {
+    dbo
+      .collection("courses")
+      .find({ slug: slug })
+      .toArray((err, results) => {
+        if (err) {
+          return callback(true, "error retrieving course.");
+        }
+        if (results.length > 0) {
+          // course already exists
+          return callback(true, []);
+        }
+        callback(false, []);
+      });
+  } catch (e) {
+    callback(true, "Error occurred getting courses");
+  }
+}
+
+function checkIfLessonExists(slug, callback) {
+  try {
+    dbo
+      .collection("lessons")
+      .find({ slug: slug })
+      .toArray((err, results) => {
+        if (err) {
+          return callback(true, "error retrieving lesson.");
+        }
+        if (results.length > 0) {
+          // lesson already exists
+          return callback(true, []);
+        }
+        callback(false, []);
+      });
+  } catch (e) {
+    callback(true, "Error occurred getting lessons");
+  }
 }
 
 function clearCache() {

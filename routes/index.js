@@ -125,8 +125,8 @@ router.get("/courses/:courseId/lessons", (req, res) => {
 
 router.get("/courses/:courseId/lessons/:lessonId", (req, res) => {
   let data = {
-    courseId: parseInt(req.params.courseId),
-    lessonId: parseInt(req.params.lessonId),
+    courseId: req.params.courseId,
+    lessonId: req.params.lessonId,
   };
   models.getSpecifcLesson(data, (err, results) => {
     if (err) {
