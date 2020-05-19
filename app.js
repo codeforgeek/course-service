@@ -54,7 +54,7 @@ app.use(function (req, res, next) {
 // error handling routes
 app.use((err, req, res, next) => {
   console.log(err);
-  res.status(500).send("Server Error");
+  res.status(500).json({ error: true, message: "Unexpected error occurred" });
 });
 
 // start the app

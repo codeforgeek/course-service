@@ -63,6 +63,56 @@ router.get("/courses", (req, res) => {
   });
 });
 
+router.get("/bits", (req, res) => {
+  models.getAllBits((err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error fetching bits." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
+router.post("/bits", (req, res) => {
+  let data = req.body;
+  models.createBits(data, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error creating bits." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
+router.get("/bits/:bitsId", (req, res) => {
+  models.getSpecificBits({ id: req.params.bitsId }, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error fetching bits." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
+router.put("/bits/:bitsId", (req, res) => {
+  let data = req.body;
+  data.id = req.params.bitsId;
+  models.updateBits(data, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error updating bits." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
+router.delete("/bits/:bitsId", (req, res) => {
+  let data = req.body;
+  data.id = req.params.bitsId;
+  models.deleteBits(data, (err, results) => {
+    if (err) {
+      return res.json({ error: true, message: "Error deleting bits." });
+    }
+    res.json({ error: false, data: results });
+  });
+});
+
 router.get("/courses/:courseId", (req, res) => {
   models.getSpecificCourse(
     {

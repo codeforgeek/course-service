@@ -3,7 +3,7 @@ const nconf = require("nconf");
 const chalk = require("chalk");
 const { uuid } = require("uuidv4");
 const redisClient = require("redis").createClient;
-const redis = redisClient(6379, "localhost");
+const redis = redisClient(6379, "localhost", { db: 0 });
 
 // connect to MongoDB
 var dbo = null;
@@ -78,6 +78,122 @@ function getSpecificCourse(query, callback) {
   } catch (e) {
     callback(true, "Error occurred getting courses");
   }
+}
+
+function getAllBits(callback) {
+  try {
+    dbo
+      .collection("bits")
+      .find({})
+      .sort({
+        date: -1,
+      })
+      .toArray((err, results) => {
+        if (err) {
+          return callback(true, "error retrieving bits.");
+        }
+        let response = {
+          bits: results,
+        };
+        callback(false, response);
+      });
+  } catch (e) {
+    callback(true, "Error occurred getting bits");
+  }
+}
+
+function getSpecificBits(query, callback) {
+  try {
+    dbo
+      .collection("bits")
+      .find({ id: query.id })
+      .sort({
+        date: -1,
+      })
+      .toArray((err, results) => {
+        if (err) {
+          return callback(true, "error retrieving bits.");
+        }
+        let response = {
+          bits: results.length > 0 ? results[0] : [],
+        };
+        callback(false, response);
+      });
+  } catch (e) {
+    callback(true, "Error occurred getting bits");
+  }
+}
+
+function createBits(bitsData, callback) {
+  checkIfBitsExists(bitsData.slug, (err) => {
+    if (err) {
+      return callback(true, "bits already exists with this slug");
+    }
+    // create bits now
+    let payload = {
+      id: uuid(),
+      name: bitsData.name,
+      slug: bitsData.slug,
+      content: bitsData.content,
+      tags: bitsData.tags,
+      author: parseInt(nconf.get("authorId")),
+      url: nconf.get("bitsUrl") + bitsData.slug,
+      date: new Date(),
+    };
+
+    dbo.collection("bits").insertOne(payload, (err, results) => {
+      if (err) {
+        return callback(true, "error creating bits.");
+      }
+      clearCache();
+      callback(false, {
+        error: false,
+        message: "Successfully created the bits",
+        data: results.ops[0],
+      });
+    });
+  });
+}
+
+function updateBits(bitsData, callback) {
+  let payload = {
+    id: bitsData.id,
+    name: bitsData.name,
+    slug: bitsData.slug,
+    content: bitsData.content,
+    tags: bitsData.tags,
+    author: parseInt(nconf.get("authorId")),
+    url: nconf.get("bitsUrl") + bitsData.slug,
+    date: new Date(),
+  };
+
+  dbo
+    .collection("bits")
+    .updateOne({ id: bitsData.id }, { $set: payload }, (err, results) => {
+      if (err) {
+        return callback(true, "error updating bits.");
+      }
+      clearCache();
+      callback(false, {
+        error: false,
+        message: "Successfully updated the bits",
+        data: [],
+      });
+    });
+}
+
+function deleteBits(bitsData, callback) {
+  dbo.collection("bits").deleteOne({ id: bitsData.id }, (err, results) => {
+    if (err) {
+      return callback(true, "error deleting bits.");
+    }
+    clearCache();
+    callback(false, {
+      error: false,
+      message: "Successfully deleted the bits",
+      data: [],
+    });
+  });
 }
 
 function getAllLessons(query, callback) {
@@ -307,6 +423,26 @@ function deleteLesson(lessonData, callback) {
     );
 }
 
+function checkIfBitsExists(slug, callback) {
+  try {
+    dbo
+      .collection("bits")
+      .find({ slug: slug })
+      .toArray((err, results) => {
+        if (err) {
+          return callback(true, "error retrieving bits.");
+        }
+        if (results.length > 0) {
+          // course already exists
+          return callback(true, []);
+        }
+        callback(false, []);
+      });
+  } catch (e) {
+    callback(true, "Error occurred getting bits");
+  }
+}
+
 function checkIfCourseExists(slug, callback) {
   try {
     dbo
@@ -459,4 +595,9 @@ module.exports = {
   updateSection: updateSection,
   getAllSections: getAllSections,
   deleteSection: deleteSection,
+  getAllBits: getAllBits,
+  getSpecificBits: getSpecificBits,
+  createBits: createBits,
+  updateBits: updateBits,
+  deleteBits: deleteBits,
 };
