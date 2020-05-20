@@ -276,6 +276,8 @@ function updateCourse(courseData, callback) {
     featuredImage: courseData.featuredImage,
     price: courseData.price,
     author: parseInt(nconf.get("authorId")),
+    level: courseData.level || "beginner",
+    type: courseData.type || "Rich Text",
     date: new Date(),
     overview: courseData.overview,
     url: nconf.get("url") + courseData.slug,
