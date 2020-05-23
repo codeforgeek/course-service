@@ -42,9 +42,9 @@ app.use(require("./routes/verify"));
 app.use("/", require("./routes"));
 
 //override console log with winston
-console.log = (...args) => {
-  logger.info(...args);
-};
+// console.log = (...args) => {
+//   logger.info(...args);
+// };
 
 // 404
 app.use(function (req, res, next) {

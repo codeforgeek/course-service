@@ -26,6 +26,7 @@ router.post("/login", (req, res) => {
       error: false,
       message: "Login successfull",
       token: nconf.get("token"),
+      tinyKey: nconf.get("tinyMceApiKey"),
     });
   } else {
     return res.json({ error: true, message: "invalid user." });
