@@ -494,7 +494,7 @@ function getAllSections(query, callback) {
     })
     .toArray((err, lessonData) => {
       if (err) {
-        return callback(true, "error retrieving sections.");
+        return callback(true, "error retrieving modules.");
       }
       if (lessonData.length === 0) {
         return callback(false, []);
@@ -512,11 +512,11 @@ function createSection(sectionData, callback) {
 
   dbo.collection("lessons_sections").insertOne(payload, (err, results) => {
     if (err) {
-      return callback(true, "error creating section.");
+      return callback(true, "error creating module.");
     }
     callback(false, {
       error: false,
-      message: "Successfully created the section.",
+      message: "Successfully created the module.",
       data: results.ops[0],
     });
   });
@@ -534,11 +534,11 @@ function updateSection(sectionData, callback) {
       { $set: payload },
       (err, results) => {
         if (err) {
-          return callback(true, "error updating section.");
+          return callback(true, "error updating module.");
         }
         callback(false, {
           error: false,
-          message: "Successfully updated the section.",
+          message: "Successfully updated the module.",
           data: [],
         });
       }
