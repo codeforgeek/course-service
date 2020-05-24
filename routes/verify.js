@@ -1,7 +1,8 @@
 const nconf = require("nconf");
 
 module.exports = function (req, res, next) {
-  if (req.url === "/login") {
+  console.log(req.url);
+  if (req.url === "/api/login") {
     return next();
   }
   var token =

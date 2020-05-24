@@ -38,8 +38,13 @@ nconf
 app.disable("etag");
 app.disable("x-powered-by");
 app.use(express.static(__dirname + "/static"));
+app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/public/static"));
+app.get("/", (req, res) => {
+  res.sendFile("index.html");
+});
 app.use(require("./routes/verify"));
-app.use("/", require("./routes"));
+app.use("/api", require("./routes"));
 
 //override console log with winston
 // console.log = (...args) => {

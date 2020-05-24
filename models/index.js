@@ -244,7 +244,8 @@ function createCourse(courseData, callback) {
       name: courseData.name,
       slug: courseData.slug,
       featuredImage: courseData.featuredImage,
-      freeFlag: courseData.freeFlag || true,
+      freeFlag:
+        typeof courseData.freeFlag === "boolean" ? courseData.freeFlag : true,
       price: courseData.price || 0,
       author: parseInt(nconf.get("authorId")),
       level: courseData.level || "beginner",
@@ -276,7 +277,8 @@ function updateCourse(courseData, callback) {
     slug: courseData.slug,
     featuredImage: courseData.featuredImage,
     price: courseData.price || 0,
-    freeFlag: courseData.freeFlag || true,
+    freeFlag:
+      typeof courseData.freeFlag === "boolean" ? courseData.freeFlag : true,
     author: parseInt(nconf.get("authorId")),
     level: courseData.level || "beginner",
     type: courseData.type || "Rich Text",
