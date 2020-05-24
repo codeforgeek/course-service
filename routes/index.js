@@ -199,10 +199,10 @@ router.post("/courses/:courseId/modules", (req, res) => {
   });
 });
 
-router.put("/courses/:courseId/modules/:modules", (req, res) => {
+router.put("/courses/:courseId/modules/:moduleId", (req, res) => {
   let data = req.body;
   data.courseId = req.params.courseId;
-  data.id = req.params.sectionId;
+  data.id = req.params.moduleId;
   models.updateSection(data, (err, results) => {
     if (err) {
       return res.json({ error: true, message: "Error getting modules." });
@@ -211,10 +211,10 @@ router.put("/courses/:courseId/modules/:modules", (req, res) => {
   });
 });
 
-router.delete("/courses/:courseId/modules/:modules", (req, res) => {
+router.delete("/courses/:courseId/modules/:moduleId", (req, res) => {
   let data = {};
   data.courseId = req.params.courseId;
-  data.id = req.params.sectionId;
+  data.id = req.params.moduleId;
   models.deleteSection(data, (err, results) => {
     if (err) {
       return res.json({ error: true, message: "Error getting modules." });
