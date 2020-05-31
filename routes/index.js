@@ -2,7 +2,18 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const nconf = require("nconf");
+const aws = require("aws-sdk");
+const multerS3 = require("multer-s3");
 const models = require("../models");
+
+// s3 configuration
+aws.config.update({
+  accessKeyId: nconf.get("accessKeyId"),
+  secretAccessKey: nconf.get("accessKeySecret"),
+  region: nconf.get("awsBucketRegion"),
+});
+
+const s3 = new aws.S3();
 
 // upload configuration
 const storage = multer.diskStorage({
@@ -14,7 +25,19 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage }).single("photo");
+// s3 uploads
+
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: nconf.get("awsBucketName"),
+    key: (req, file, cb) => {
+      const newFileName = Date.now() + "-" + file.originalname;
+      const fullPath = "images/" + newFileName;
+      cb(null, fullPath);
+    },
+  }),
+}).single("photo");
 
 router.post("/login", (req, res) => {
   let data = req.body;
@@ -38,9 +61,16 @@ router.post("/photo", (req, res) => {
     if (err) {
       return res.json({ error: true, message: "Error uploading file." });
     }
+    // set the upload path
+    let url = null;
+    if (nconf.get("cloudFrontURL")) {
+      url = nconf.get("cloudFrontURL") + req.file.key;
+    } else {
+      url = req.file.location;
+    }
     res.json({
       error: false,
-      path: "http://localhost:4000/" + req.file.originalname,
+      path: url,
     });
   });
 });

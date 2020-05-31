@@ -1,1 +1,0 @@
-{"version":3,"sources":["modules.scss"],"names":[],"mappings":"AAAA,gBACE,gBAAiB,CACjB,aAAc,CACf,oCAIG,YAAa","file":"8.c3702b40.chunk.css","sourcesContent":[".lesson-content {\n  min-height: 300px;\n  overflow: auto;\n}\n\n#editor-disabled {\n  .tox-editor-header {\n    display: none;\n  }\n}\n"]}
