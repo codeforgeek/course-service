@@ -1,0 +1,2 @@
+(this["webpackJsonpcourse-generator-ui"]=this["webpackJsonpcourse-generator-ui"]||[]).push([[13],{315:function(e,n,r){"use strict";r.r(n);var t=r(0),u=r.n(t);n.default=function(e){return u.a.createElement("div",null,"404!")}}}]);
+//# sourceMappingURL=13.da744b60.chunk.js.map

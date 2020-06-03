@@ -62,6 +62,7 @@ router.post("/photo", (req, res) => {
       return res.json({ error: true, message: "Error uploading file." });
     }
     // set the upload path
+    console.log(req.file);
     let url = null;
     if (nconf.get("cloudFrontURL")) {
       url = nconf.get("cloudFrontURL") + req.file.key;
